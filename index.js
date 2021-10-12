@@ -3,7 +3,23 @@ const morgan = require("morgan");
 const app = express();
 
 app.use(express.json());
-app.use(morgan("tiny"));
+app.use(
+	morgan(function (tokens, req, res) {
+		return [
+			tokens.method(req, res),
+			tokens.url(req, res),
+			tokens.status(req, res),
+			tokens.res(req, res, "content-length"),
+			"-",
+			tokens["response-time"](req, res),
+			"ms",
+			tokens.response(req, res),
+		].join(" ");
+	})
+);
+morgan.token("response", function (request, response) {
+	return JSON.stringify(request.body);
+});
 
 let persons = [
 	{
@@ -75,7 +91,6 @@ app.post("/api/persons", (request, response) => {
 	if (!newPerson.name || !newPerson.number) {
 		response.status(400);
 		response.json({ error: "Missing name and/or number" });
-		console.log(newPerson.name);
 	} else if (checkDuplicate) {
 		response.status(400);
 		response.json({ error: "Name already exists" });
