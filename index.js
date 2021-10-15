@@ -1,6 +1,5 @@
 require("dotenv").config();
 const express = require("express");
-const morgan = require("morgan");
 const app = express();
 const cors = require("cors");
 const Person = require("./models/person");
@@ -8,29 +7,33 @@ const Person = require("./models/person");
 app.use(cors());
 app.use(express.json());
 app.use(express.static("build"));
-app.use(
-	morgan(function (tokens, req, res) {
-		return [
-			tokens.method(req, res),
-			tokens.url(req, res),
-			tokens.status(req, res),
-			tokens.res(req, res, "content-length"),
-			"-",
-			tokens["response-time"](req, res),
-			"ms",
-			tokens.response(req, res),
-		].join(" ");
-	})
-);
 
-morgan.token("response", function (request, response) {
-	return JSON.stringify(request.body);
-});
+const errorHandler = (error, request, response, next) => {
+	console.error(error.message);
+
+	if (error.name === "CastError") {
+		return response.status(400).send({ error: "malformatted id" });
+	}
+
+	next(error);
+};
+
+const requestLogger = (request, response, next) => {
+	console.log("Method:", request.method);
+	console.log("Path:  ", request.path);
+	console.log("Body:  ", request.body);
+	console.log("---");
+	next();
+};
+
+app.use(requestLogger);
 
 app.get("/api/persons", (request, response) => {
-	Person.find({}).then((persons) => {
-		response.json(persons);
-	});
+	Person.find({})
+		.then((persons) => {
+			response.json(persons);
+		})
+		.catch((error) => next(error));
 });
 
 app.get("/api/info", (request, result) => {
@@ -67,16 +70,27 @@ app.post("/api/persons", (request, response) => {
 		number: body.number,
 	});
 
-	if (newPerson.name === undefined || newPerson.number === undefined) {
+	if (!newPerson.name || !newPerson.number) {
 		response.status(400);
 		response.json({ error: "Missing name and/or number" });
 	} else {
-		newPerson.save().then((savedNote) => {
-			response.status(201);
-			response.json(savedNote);
-		});
+		newPerson
+			.save()
+			.then((savedPerson) => {
+				response.status(201);
+				response.json(savedPerson);
+			})
+			.catch((error) => next(error));
 	}
 });
+
+const unknownEndpoint = (request, response) => {
+	response.status(404).send({ error: "unknown endpoint" });
+};
+
+app.use(unknownEndpoint);
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
