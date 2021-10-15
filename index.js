@@ -1,6 +1,7 @@
 require('dotenv').config()
 const express = require('express')
 const app = express()
+const morgan = require('morgan')
 const cors = require('cors')
 const Person = require('./models/person')
 
@@ -8,15 +9,24 @@ app.use(cors())
 app.use(express.json())
 app.use(express.static('build'))
 
-const requestLogger = (request, response, next) => {
-  console.log('Method:', request.method)
-  console.log('Path:  ', request.path)
-  console.log('Body:  ', request.body)
-  console.log('---')
-  next()
-}
+app.use(
+  morgan(function (tokens, req, res) {
+    return [
+      tokens.method(req, res),
+      tokens.url(req, res),
+      tokens.status(req, res),
+      tokens.res(req, res, 'content-length'),
+      '-',
+      tokens['response-time'](req, res),
+      'ms',
+      tokens.response(req, res),
+    ].join(' ')
+  })
+)
 
-app.use(requestLogger)
+morgan.token('response', function (request) {
+  return JSON.stringify(request.body)
+})
 
 app.get('/api/persons', (request, response, next) => {
   Person.find({})
