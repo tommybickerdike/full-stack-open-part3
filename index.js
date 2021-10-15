@@ -28,7 +28,7 @@ const requestLogger = (request, response, next) => {
 
 app.use(requestLogger);
 
-app.get("/api/persons", (request, response) => {
+app.get("/api/persons", (request, response, next) => {
 	Person.find({})
 		.then((persons) => {
 			response.json(persons);
@@ -66,7 +66,7 @@ app.delete("/api/persons/:id", (request, response, next) => {
 		.catch((error) => next(error));
 });
 
-app.post("/api/persons", (request, response) => {
+app.post("/api/persons", (request, response, next) => {
 	const body = request.body;
 
 	const newPerson = new Person({
