@@ -38,9 +38,12 @@ app.get("/api/persons", (request, response) => {
 
 app.get("/api/info", (request, result) => {
 	const timeStamp = new Date(Date.now());
-	result.send(
-		`<p>Phonebook has info for ${persons.length} people</p><p>${timeStamp}</p>`
-	);
+
+	Person.count({}, (err, count) => {
+		result.send(
+			`<p>Phonebook has info for ${count} people</p><p>${timeStamp}</p>`
+		);
+	});
 });
 
 app.get("/api/persons/:id", (request, response, next) => {
