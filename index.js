@@ -22,6 +22,7 @@ app.use(
 		].join(" ");
 	})
 );
+
 morgan.token("response", function (request, response) {
 	return JSON.stringify(request.body);
 });
@@ -57,31 +58,22 @@ app.delete("/api/persons/:id", (request, response) => {
 	response.status(204).end();
 });
 
-const generateId = () => {
-	return Math.floor(Math.random() * (100000000000 - 1));
-};
-
 app.post("/api/persons", (request, response) => {
 	const body = request.body;
 
-	const newPerson = {
-		id: generateId(),
+	const newPerson = new Person({
 		name: body.name,
 		number: body.number,
-	};
+	});
 
-	const checkDuplicate = persons.find((person) => person.name === body.name);
-
-	if (!newPerson.name || !newPerson.number) {
+	if (newPerson.name === undefined || newPerson.number === undefined) {
 		response.status(400);
 		response.json({ error: "Missing name and/or number" });
-	} else if (checkDuplicate) {
-		response.status(400);
-		response.json({ error: "Name already exists" });
 	} else {
-		persons = persons.concat(newPerson);
-		response.status(201);
-		response.json(newPerson);
+		newPerson.save().then((savedNote) => {
+			response.status(201);
+			response.json(savedNote);
+		});
 	}
 });
 
