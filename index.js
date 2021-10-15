@@ -8,16 +8,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("build"));
 
-const errorHandler = (error, request, response, next) => {
-	console.error(error.message);
-
-	if (error.name === "CastError") {
-		return response.status(400).send({ error: "malformatted id" });
-	}
-
-	next(error);
-};
-
 const requestLogger = (request, response, next) => {
 	console.log("Method:", request.method);
 	console.log("Path:  ", request.path);
@@ -74,18 +64,13 @@ app.post("/api/persons", (request, response, next) => {
 		number: body.number,
 	});
 
-	if (!newPerson.name || !newPerson.number) {
-		response.status(400);
-		response.json({ error: "Missing name and/or number" });
-	} else {
-		newPerson
-			.save()
-			.then((savedPerson) => {
-				response.status(201);
-				response.json(savedPerson);
-			})
-			.catch((error) => next(error));
-	}
+	newPerson
+		.save()
+		.then((savedPerson) => {
+			response.status(201);
+			response.json(savedPerson);
+		})
+		.catch((error) => next(error));
 });
 
 app.put("/api/persons/:id", (request, response, next) => {
@@ -104,10 +89,22 @@ app.put("/api/persons/:id", (request, response, next) => {
 });
 
 const unknownEndpoint = (request, response) => {
-	response.status(404).send({ error: "unknown endpoint" });
+	response.status(404).send({ message: "unknown endpoint" });
 };
 
 app.use(unknownEndpoint);
+
+const errorHandler = (error, request, response, next) => {
+	console.error(error.message);
+
+	if (error.name === "CastError") {
+		return response.status(400).send({ message: "malformatted id" });
+	} else if (error.name === "ValidationError") {
+		return response.status(400).json({ message: error.message });
+	}
+
+	next(error);
+};
 
 app.use(errorHandler);
 
