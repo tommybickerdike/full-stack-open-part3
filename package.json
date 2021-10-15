@@ -20,6 +20,7 @@
 	"homepage": "https://github.com/tommybickerdike/full-stack-open-part3#readme",
 	"dependencies": {
 		"cors": "^2.8.5",
+		"dotenv": "^10.0.0",
 		"express": "^4.17.1",
 		"mongoose": "^6.0.10",
 		"morgan": "^1.10.0"
